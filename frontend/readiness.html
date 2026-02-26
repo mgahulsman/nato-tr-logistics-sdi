@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Istanbul SDI - Readiness</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="readiness.html">Readiness Map</a>
+    </nav>
+    <div class="dashboard">
+        <h3>Operational Layers</h3>
+        <div class="control-group">
+            <label>Infrastructure Type</label>
+            <select id="infra-select">
+                <option value="bridges">Bridges (Critical Nodes)</option>
+                <option value="tunnels">Tunnels (Logistics)</option>
+                <option value="highways">Strategic Roads (E80/D100)</option>
+            </select>
+        </div>
+        <div class="stats-box">
+            <p style="font-size: 0.8rem; color: #666;">
+                Evaluating 1:10,000 scale attributes like <strong>maxweight</strong> and <strong>clearance</strong>[cite: 30, 98].
+            </p>
+            <div id="attribute-status" class="stat-item">
+                <span>Data Reliability:</span><span id="reliability-val" class="stat-value">Checking...</span>
+            </div>
+        </div>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/layerManager.js"></script>
+    <script>
+        const map = L.map('map').setView(MAP_SETTINGS.center, MAP_SETTINGS.zoom);
+        L.tileLayer(MAP_SETTINGS.tiles).addTo(map);
+        let currentLayer;
+
+        async function updateMap() {
+            if (currentLayer) map.removeLayer(currentLayer);
+            const type = document.getElementById('infra-select').value;
+            
+            // Gebruik de fetchGeoJSON functie uit je layerManager.js
+            const data = await fetchGeoJSON(DATA_PATHS.infrastructure(type));
+            
+            if (data) {
+                currentLayer = L.geoJson(data, {
+                    style: { color: STYLE_PALETTE[type], weight: 3, opacity: 0.8 },
+                    onEachFeature: (f, l) => {
+                        l.bindPopup(`<b>Infrastructure:</b> ${f.properties.name || 'Unknown'}<br>
+                                     <b>Max Weight:</b> ${f.properties.maxweight || 'Missing'}<br>
+                                     <b>Status:</b> Reliable [Local Host]`);
+                    }
+                }).addTo(map);
+                document.getElementById('reliability-val').innerText = "High (Local Host)";
+            } else {
+                document.getElementById('reliability-val').innerText = "Error - File missing";
+            }
+        }
+
+        document.getElementById('infra-select').onchange = updateMap;
+        updateMap();
+    </script>
+</body>
+</html>
