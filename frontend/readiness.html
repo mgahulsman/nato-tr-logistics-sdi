@@ -4,6 +4,38 @@
     <title>Istanbul SDI - Readiness</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/osmtogeojson@3.0.0-beta.4/osmtogeojson.js"></script>
+    <style>
+        /* Legend Styles */
+        .legend {
+            padding: 10px;
+            background: white;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            line-height: 24px;
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.85rem;
+        }
+        .legend h4 {
+            margin: 0 0 8px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            color: #666;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 10px;
+            opacity: 0.8;
+            border-radius: 3px;
+            border: 1px solid #fff;
+        }
+    </style>
 </head>
 <body>
     <nav>
@@ -15,17 +47,22 @@
         <div class="control-group">
             <label>Infrastructure Type</label>
             <select id="infra-select">
+                <option value="all">All Infrastructure (Combined)</option>
                 <option value="bridges">Bridges (Critical Nodes)</option>
                 <option value="tunnels">Tunnels (Logistics)</option>
                 <option value="highways">Strategic Roads (E80/D100)</option>
+                <option value="hospitals">Hospitals (Medical Support)</option>
+                <option value="power">Power Facilities (Energy)</option>
+                <option value="ports">Ports & Harbours (Logistics)</option>
+                <option value="fuel">Fuel Stations (Supply)</option>
             </select>
         </div>
         <div class="stats-box">
             <p style="font-size: 0.8rem; color: #666;">
-                Evaluating 1:10,000 scale attributes like <strong>maxweight</strong> and <strong>clearance</strong>[cite: 30, 98].
+                Evaluating 1:10,000 scale attributes like <strong>maxweight</strong> and <strong>clearance</strong> for military readiness.
             </p>
             <div id="attribute-status" class="stat-item">
-                <span>Data Reliability:</span><span id="reliability-val" class="stat-value">Checking...</span>
+                <span>Data Source:</span><span id="reliability-val" class="stat-value">Local Host</span>
             </div>
         </div>
     </div>
@@ -37,27 +74,88 @@
     <script>
         const map = L.map('map').setView(MAP_SETTINGS.center, MAP_SETTINGS.zoom);
         L.tileLayer(MAP_SETTINGS.tiles).addTo(map);
-        let currentLayer;
+        
+        let currentLayerGroup = L.layerGroup().addTo(map);
+
+        // --- Legend Implementation ---
+        const legend = L.control({ position: 'topright' });
+
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML = '<h4>Operational Legend</h4>';
+            
+            // Generate a legend item for each type in the STYLE_PALETTE
+            for (const type in STYLE_PALETTE) {
+                const color = STYLE_PALETTE[type];
+                const label = type.charAt(0).toUpperCase() + type.slice(1);
+                div.innerHTML += `<div><i style="background: ${color}"></i> ${label}</div>`;
+            }
+            return div;
+        };
+
+        legend.addTo(map);
+        // --- End Legend ---
+
+        async function loadAndPlotLayer(type) {
+            const data = await fetchGeoJSON(DATA_PATHS.infrastructure(type));
+            if (data && data.elements) {
+                const geojsonData = osmtogeojson(data);
+                
+                const layer = L.geoJson(geojsonData, {
+                    style: (feature) => ({
+                        color: STYLE_PALETTE[type] || '#7f8c8d',
+                        weight: 4,
+                        opacity: 0.8
+                    }),
+                    pointToLayer: (feature, latlng) => {
+                        return L.circleMarker(latlng, {
+                            radius: 6,
+                            fillColor: STYLE_PALETTE[type] || '#7f8c8d',
+                            color: "#fff",
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    },
+                    onEachFeature: (f, l) => {
+                        l.bindPopup(`
+                            <strong>Name:</strong> ${f.properties.name || 'Unnamed'}<br>
+                            <strong>Layer:</strong> ${type.toUpperCase()}<br>
+                            <strong>Scale:</strong> 1:10,000 Operational
+                        `);
+                    }
+                });
+                return layer;
+            }
+            return null;
+        }
 
         async function updateMap() {
-            if (currentLayer) map.removeLayer(currentLayer);
-            const type = document.getElementById('infra-select').value;
-            
-            // Gebruik de fetchGeoJSON functie uit je layerManager.js
-            const data = await fetchGeoJSON(DATA_PATHS.infrastructure(type));
-            
-            if (data) {
-                currentLayer = L.geoJson(data, {
-                    style: { color: STYLE_PALETTE[type], weight: 3, opacity: 0.8 },
-                    onEachFeature: (f, l) => {
-                        l.bindPopup(`<b>Infrastructure:</b> ${f.properties.name || 'Unknown'}<br>
-                                     <b>Max Weight:</b> ${f.properties.maxweight || 'Missing'}<br>
-                                     <b>Status:</b> Reliable [Local Host]`);
-                    }
-                }).addTo(map);
-                document.getElementById('reliability-val').innerText = "High (Local Host)";
+            currentLayerGroup.clearLayers();
+            const selection = document.getElementById('infra-select').value;
+            document.getElementById('reliability-val').innerText = "Loading...";
+
+            const typesToFetch = selection === 'all' 
+                ? Object.keys(STYLE_PALETTE) 
+                : [selection];
+
+            const layerPromises = typesToFetch.map(type => loadAndPlotLayer(type));
+            const layers = await Promise.all(layerPromises);
+
+            let successCount = 0;
+            layers.forEach(layer => {
+                if (layer) {
+                    layer.addTo(currentLayerGroup);
+                    successCount++;
+                }
+            });
+
+            if (successCount > 0) {
+                document.getElementById('reliability-val').innerText = selection === 'all' 
+                    ? `Loaded ${successCount} layers` 
+                    : "High (Local Raw)";
             } else {
-                document.getElementById('reliability-val').innerText = "Error - File missing";
+                document.getElementById('reliability-val').innerText = "Files Missing";
             }
         }
 

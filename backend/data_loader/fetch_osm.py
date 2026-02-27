@@ -8,8 +8,7 @@ from datetime import datetime
 
 # Safety limits defined by the user
 MAX_REQUESTS_PER_DAY = 9000
-MAX_BYTES_PER_DAY = 800 * 1024 * 1024 # 800 MB in bytes
-STATS_FILE = os.getcwd() + '..\\..\\data\\usage_stats.json'
+MAX_MB_PER_DAY = 800 # MB
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 STATS_FILE = DATA_DIR / "usage_stats.json"
@@ -20,7 +19,7 @@ def load_stats():
         stats = json.load(f)
         if stats.get("date") == datetime.now().strftime("%Y-%m-%d"):
             return stats
-    return {"date": datetime.now().strftime("%Y-%m-%d"), "request_count": 0, "bytes_downloaded": 0}
+    return {"date": datetime.now().strftime("%Y-%m-%d"), "request_count": 0, "mb_downloaded": 0}
 
 def save_stats(stats):
     os.makedirs(os.path.dirname(STATS_FILE), exist_ok=True)
@@ -31,8 +30,8 @@ def fetch_istanbul_infra(layer_type, stats):
     if stats["request_count"] >= MAX_REQUESTS_PER_DAY:
         print(f"Daily request limit reached ({MAX_REQUESTS_PER_DAY}). Skipping {layer_type}.")
 
-    if stats["bytes_downloaded"] >= MAX_BYTES_PER_DAY:
-        print(f"Daily download limit reached (800 MB). Skipping {layer_type}.")
+    if stats["mb_downloaded"] >= MAX_MB_PER_DAY:
+        print(f"Daily download limit reached ({MAX_MB_PER_DAY} MB). Skipping {layer_type}.")
 
     bbox = "40.845,28.784,41.161,29.341" # Istanbul
     queries = {
@@ -60,27 +59,23 @@ def fetch_istanbul_infra(layer_type, stats):
             
             if response.status_code == 200:
                 content = response.content
-                file_size = len(content)
+                file_size_mb = round(len(content) / (1024 * 1024), 2) # Convert from bytes to MB
                 
-                # Check if this specific download will push us over the 800MB limit
-                if stats["bytes_downloaded"] + file_size > MAX_BYTES_PER_DAY:
-                    print(f"Warning: Downloading {layer_type} would exceed 800 MB limit. Aborting.")
+                if stats["mb_downloaded"] + file_size_mb > MAX_MB_PER_DAY:
+                    print(f"Download of {layer_type} would exceed {MAX_MB_PER_DAY} MB limit. Aborting.")
                     return
 
-                file_path = f"data/raw_{layer_type}.json"
-                os.makedirs("data", exist_ok=True)
+                file_path = DATA_DIR / "geo" / "raw" / f"{layer_type}.json"
                 with open(file_path, "wb") as f:
                     f.write(content)
                 
-                # Update usage stats
                 stats["request_count"] += 1
-                stats["bytes_downloaded"] += file_size
+                stats["mb_downloaded"] = round(stats["mb_downloaded"] + file_size_mb, 2)
                 save_stats(stats)
                 
-                print(f"Successfully saved {layer_type} ({file_size} bytes)")
-                return
-                
-            elif response.status_code == 429:
+                print(f"Saved {layer_type} ({file_size_mb} MB). Total today: {stats['mb_downloaded']} MB")
+                    
+            elif response.status_code == 429: 
                 print(f"Rate limited (429) for {layer_type}. Waiting 30s...")
                 time.sleep(30)
             else:
