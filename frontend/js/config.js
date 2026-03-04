@@ -5,7 +5,7 @@ const MAP_SETTINGS = {
 };
 
 const DATA_PATHS = {
-    infrastructure: (type) => `../data/geo/raw/raw_${type}.json`,
+    infrastructure: (type) => `../data/geo/raw/${type}.json`,
     readiness: (metric) => `../data/istanbul/analysis_${metric}.geojson`
 };
 
