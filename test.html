@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <title>Mijn Protomaps Kaart - v5</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <script src="https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+    const API_KEY = "d42e766a567023ee"; 
+const STYLE_URL = `https://api.protomaps.com/styles/v5/light/en.json?key=${API_KEY}`;
+
+const map = new maplibregl.Map({
+    container: 'map',
+    style: STYLE_URL, 
+    center: [28.9784, 41.0082], // Istanbul
+    zoom: 14, // We gaan direct diep de stad in
+    hash: true
+});
+
+map.on('load', () => {
+    // We halen alle bestaande lagen op uit de stijl
+    const allLayers = map.getStyle().layers;
+
+    allLayers.forEach(layer => {
+        // Als de naam van de laag 'tunnels' bevat
+        if (layer.id.includes('tunnels')) {
+            // Verander de kleur naar felrood
+            map.setPaintProperty(layer.id, 'line-color', '#ff0000');
+            // Maak ze extra dik zodat ze opvallen
+            map.setPaintProperty(layer.id, 'line-width', 5);
+            // Zorg dat ze goed zichtbaar zijn
+            map.setPaintProperty(layer.id, 'line-opacity', 1);
+        }
+    });
+
+    console.log("Tunnels zijn nu rood gekleurd!");
+});
+</script>
+
+</body>
+</html>

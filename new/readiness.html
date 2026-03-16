@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Istanbul SDI - Readiness Map</title>
+    <script src="https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="readiness.html">Readiness Map</a>
+    </nav>
+
+    <div class="dashboard">
+        <h3>Operationele Lagen</h3>
+        <div class="control-group">
+            <label>Infrastructuur Type</label>
+            <select id="infra-select">
+                <option value="none">Geen (Standaard kaart)</option>
+                <option value="tunnels">Tunnels (Logistiek)</option>
+                <option value="bridges">Bruggen (Kritieke Knooppunten)</option>
+                <option value="highways">Strategische Wegen (E80/D100)</option>
+            </select>
+        </div>
+        <div class="stats-box">
+            <p style="font-size: 0.8rem; color: #666;">
+                Beoordeling van attributen zoals <strong>maxweight</strong> en <strong>clearance</strong> voor militaire paraatheid.
+            </p>
+            <div id="attribute-status" class="stat-item">
+                <span>Data Bron:</span><span id="reliability-val" class="stat-value">Protomaps Cloud v5</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+        const API_KEY = "d42e766a567023ee";
+        const STYLE_URL = `https://api.protomaps.com/styles/v5/light/en.json?key=${API_KEY}`;
+
+        // Initialiseer de kaart
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: STYLE_URL,
+            center: [28.9784, 41.0082], // Istanbul
+            zoom: 13,
+            hash: true
+        });
+
+        map.addControl(new maplibregl.NavigationControl());
+
+        const STYLE_PALETTE = {
+            bridges: '#e74c3c',
+            tunnels: '#ff0000',
+            highways: '#f1c40f'
+        };
+
+        map.on('load', () => {
+            console.log("Protomaps v5 geladen.");
+            
+            document.getElementById('infra-select').addEventListener('change', (e) => {
+                const selection = e.target.value;
+                const layers = map.getStyle().layers;
+
+                // Loop door alle lagen en pas kleuren aan op basis van selectie
+                layers.forEach(layer => {
+                    if (layer.id.includes('roads')) {
+                        // Reset kleuren naar standaard
+                        map.setPaintProperty(layer.id, 'line-color', '#ced4da');
+                        map.setPaintProperty(layer.id, 'line-width', 1);
+
+                        // Highlight tunnels
+                        if (selection === 'tunnels' && layer.id.includes('tunnels')) {
+                            map.setPaintProperty(layer.id, 'line-color', STYLE_PALETTE.tunnels);
+                            map.setPaintProperty(layer.id, 'line-width', 5);
+                        }
+                        // Highlight bruggen
+                        if (selection === 'bridges' && layer.id.includes('bridges')) {
+                            map.setPaintProperty(layer.id, 'line-color', STYLE_PALETTE.bridges);
+                            map.setPaintProperty(layer.id, 'line-width', 5);
+                        }
+                        // Highlight snelwegen
+                        if (selection === 'highways' && (layer.id.includes('highway') || layer.id.includes('major'))) {
+                            map.setPaintProperty(layer.id, 'line-color', STYLE_PALETTE.highways);
+                            map.setPaintProperty(layer.id, 'line-width', 3);
+                        }
+                    }
+                });
+                
+                document.getElementById('reliability-val').innerText = selection.toUpperCase();
+            });
+        });
+    </script>
+</body>
+</html>
