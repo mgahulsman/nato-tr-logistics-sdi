@@ -2,34 +2,96 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Istanbul SDI - Readiness Map</title>
+    <title>Istanbul SDI - Total Data Control</title>
     <script src="https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        
+        .dashboard {
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            background: white; padding: 20px; border-radius: 12px; 
+            width: 350px; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        h3 { margin: 0 0 10px 0; font-size: 1.1rem; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        h4 { margin: 15px 0 5px 0; font-size: 0.75rem; text-transform: uppercase; color: #777; letter-spacing: 0.5px; }
+
+        .category-box { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        
+        .layer-item { 
+            display: flex; align-items: center; padding: 4px 0;
+        }
+        .layer-item input { margin-right: 10px; width: 16px; height: 16px; cursor: pointer; }
+        .layer-item label { cursor: pointer; font-size: 0.85rem; color: #333; flex-grow: 1; }
+
+        .color-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+    </style>
 </head>
 <body>
-    <nav>
-        <a href="index.html">Home</a>
-        <a href="readiness.html">Readiness Map</a>
-    </nav>
 
     <div class="dashboard">
-        <h3>Operationele Lagen</h3>
-        <div class="control-group">
-            <label>Infrastructuur Type</label>
-            <select id="infra-select">
-                <option value="none">Geen (Standaard kaart)</option>
-                <option value="tunnels">Tunnels (Logistiek)</option>
-                <option value="bridges">Bruggen (Kritieke Knooppunten)</option>
-                <option value="highways">Strategische Wegen (E80/D100)</option>
-            </select>
+        <h3>Istanbul Data Control</h3>
+        
+        <div class="category-box">
+            <h4>🚨 Kritieke Infrastructuur</h4>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-bridges" checked>
+                <div class="color-dot" style="background: #e74c3c;"></div>
+                <label for="grp-bridges">Bruggen & Viaducten</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-tunnels" checked>
+                <div class="color-dot" style="background: #3498db;"></div>
+                <label for="grp-tunnels">Tunnels & Onderdoorgangen</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-piers">
+                <div class="color-dot" style="background: #1abc9c;"></div>
+                <label for="grp-piers">Havens & Piers (Marine)</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-rail">
+                <div class="color-dot" style="background: #9b59b6;"></div>
+                <label for="grp-rail">Spoorwegen (Logistiek)</label>
+            </div>
         </div>
-        <div class="stats-box">
-            <p style="font-size: 0.8rem; color: #666;">
-                Beoordeling van attributen zoals <strong>maxweight</strong> en <strong>clearance</strong> voor militaire paraatheid.
-            </p>
-            <div id="attribute-status" class="stat-item">
-                <span>Data Bron:</span><span id="reliability-val" class="stat-value">Protomaps Cloud v5</span>
+
+        <div class="category-box">
+            <h4>🏥 Maatschappelijk</h4>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-hospitals">
+                <label for="grp-hospitals">Ziekenhuizen (Landuse)</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-schools">
+                <label for="grp-schools">Scholen & Universiteiten</label>
+            </div>
+        </div>
+
+        <div class="category-box">
+            <h4>🗺️ Basis Kaart</h4>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-roads-major" checked>
+                <label for="grp-roads-major">Hoofdwegen (E80/D100)</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-roads-minor">
+                <label for="grp-roads-minor">Binnenwegen & Service</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-buildings" checked>
+                <label for="grp-buildings">Gebouwen (Footprints)</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-water" checked>
+                <label for="grp-water">Waterlichamen</label>
+            </div>
+            <div class="layer-item">
+                <input type="checkbox" id="grp-green">
+                <label for="grp-green">Parken & Groen</label>
             </div>
         </div>
     </div>
@@ -40,58 +102,67 @@
         const API_KEY = "d42e766a567023ee";
         const STYLE_URL = `https://api.protomaps.com/styles/v5/light/en.json?key=${API_KEY}`;
 
-        // Initialiseer de kaart
         const map = new maplibregl.Map({
             container: 'map',
             style: STYLE_URL,
-            center: [28.9784, 41.0082], // Istanbul
-            zoom: 13,
+            center: [28.9784, 41.0082], 
+            zoom: 12,
             hash: true
         });
 
-        map.addControl(new maplibregl.NavigationControl());
+        // Mapping van UI groepen naar de exacte laag-IDs uit jouw console output
+        const LAYER_GROUPS = {
+            'grp-bridges': ['roads_bridges_major', 'roads_bridges_link', 'roads_bridges_other', 'roads_bridges_major_casing', 'roads_bridges_link_casing', 'roads_bridges_other_casing'],
+            'grp-tunnels': ['roads_tunnels_major', 'roads_tunnels_link', 'roads_tunnels_minor', 'roads_tunnels_other', 'roads_tunnels_major_casing', 'roads_tunnels_link_casing', 'roads_tunnels_minor_casing', 'roads_tunnels_other_casing'],
+            'grp-piers': ['roads_pier'],
+            'grp-rail': ['roads_rail'],
+            'grp-hospitals': ['landuse_hospital'],
+            'grp-schools': ['landuse_school'],
+            'grp-roads-major': ['roads_major', 'roads_major_casing_late', 'roads_link', 'roads_link_casing', 'roads_labels_major'],
+            'grp-roads-minor': ['roads_minor', 'roads_minor_service', 'roads_minor_casing', 'roads_minor_service_casing', 'roads_other', 'landuse_pedestrian'],
+            'grp-buildings': ['buildings'],
+            'grp-water': ['water'],
+            'grp-green': ['landuse_urban_green', 'landuse_park']
+        };
 
-        const STYLE_PALETTE = {
-            bridges: '#e74c3c',
-            tunnels: '#ff0000',
-            highways: '#f1c40f'
+        const OP_COLORS = {
+            'grp-bridges': '#e74c3c',
+            'grp-tunnels': '#3498db',
+            'grp-piers': '#1abc9c',
+            'grp-rail': '#9b59b6'
         };
 
         map.on('load', () => {
-            console.log("Protomaps v5 geladen.");
-            
-            document.getElementById('infra-select').addEventListener('change', (e) => {
-                const selection = e.target.value;
-                const layers = map.getStyle().layers;
+            const updateLayers = () => {
+                Object.keys(LAYER_GROUPS).forEach(groupId => {
+                    const isVisible = document.getElementById(groupId).checked;
+                    const layerIds = LAYER_GROUPS[groupId];
 
-                // Loop door alle lagen en pas kleuren aan op basis van selectie
-                layers.forEach(layer => {
-                    if (layer.id.includes('roads')) {
-                        // Reset kleuren naar standaard
-                        map.setPaintProperty(layer.id, 'line-color', '#ced4da');
-                        map.setPaintProperty(layer.id, 'line-width', 1);
-
-                        // Highlight tunnels
-                        if (selection === 'tunnels' && layer.id.includes('tunnels')) {
-                            map.setPaintProperty(layer.id, 'line-color', STYLE_PALETTE.tunnels);
-                            map.setPaintProperty(layer.id, 'line-width', 5);
+                    layerIds.forEach(id => {
+                        // Controleer of de laag überhaupt bestaat in de huidige stijl
+                        if (map.getLayer(id)) {
+                            map.setLayoutProperty(id, 'visibility', isVisible ? 'visible' : 'none');
+                            
+                            // Extra: Geef de kritieke lagen een opvallende kleur als ze aan staan
+                            if (isVisible && OP_COLORS[groupId]) {
+                                map.setPaintProperty(id, 'line-color', OP_COLORS[groupId]);
+                                if (!id.includes('casing')) map.setPaintProperty(id, 'line-width', 3);
+                            }
                         }
-                        // Highlight bruggen
-                        if (selection === 'bridges' && layer.id.includes('bridges')) {
-                            map.setPaintProperty(layer.id, 'line-color', STYLE_PALETTE.bridges);
-                            map.setPaintProperty(layer.id, 'line-width', 5);
-                        }
-                        // Highlight snelwegen
-                        if (selection === 'highways' && (layer.id.includes('highway') || layer.id.includes('major'))) {
-                            map.setPaintProperty(layer.id, 'line-color', STYLE_PALETTE.highways);
-                            map.setPaintProperty(layer.id, 'line-width', 3);
-                        }
-                    }
+                    });
                 });
-                
-                document.getElementById('reliability-val').innerText = selection.toUpperCase();
+            };
+
+            // Event listener voor alle checkboxes
+            document.querySelectorAll('input[type=checkbox]').forEach(cb => {
+                cb.addEventListener('change', updateLayers);
             });
+
+            // Eerste keer laden
+            updateLayers();
         });
+
+        map.addControl(new maplibregl.NavigationControl());
     </script>
 </body>
 </html>
