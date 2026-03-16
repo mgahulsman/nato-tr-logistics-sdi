@@ -10,7 +10,7 @@ from datetime import datetime
 MAX_REQUESTS_PER_DAY = 9000
 MAX_MB_PER_DAY = 800 # MB
 
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
+DATA_DIR = Path(__file__).parent.parent.parent / "nato-tr-logistics-sdi" / "data"
 STATS_FILE = DATA_DIR / "usage_stats.json"
 
 
@@ -65,7 +65,7 @@ def fetch_istanbul_infra(layer_type, stats):
                     print(f"Download of {layer_type} would exceed {MAX_MB_PER_DAY} MB limit. Aborting.")
                     return
 
-                file_path = DATA_DIR / "geo" / "raw" / f"{layer_type}.json"
+                file_path = DATA_DIR / "geo" / "test" / f"{layer_type}.json"
                 with open(file_path, "wb") as f:
                     f.write(content)
                 
