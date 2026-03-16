@@ -1,11 +1,3 @@
-const map = new maplibregl.Map({
-            container: 'map',
-            style: STYLE_URL,
-            center: [28.9784, 41.0082], 
-            zoom: 12,
-            hash: true
-        });
-
 function initDashboard() {
     const container = document.getElementById('ui-container');
 
@@ -40,7 +32,6 @@ function applyLayerState(layerCfg) {
             if (isVisible) {
                 const type = map.getLayer(id).type;
                 
-                // Kleur toepassen op basis van het type laag
                 if (type === 'line') {
                     map.setPaintProperty(id, 'line-color', layerCfg.color);
                     if (!id.includes('casing')) map.setPaintProperty(id, 'line-width', 2.5);
