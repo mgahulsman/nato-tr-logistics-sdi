@@ -8,7 +8,11 @@
 </head>
 <body>
     <nav>
-        </nav>
+        <a href="#">Dashboard</a>
+        <a href="#">Analytics</a>
+        <a href="#">Logistics</a>
+    </nav>
+
     <div class="dashboard">
         <h3>Operational Layers</h3>
         <div class="control-group">
@@ -19,7 +23,6 @@
                 <option value="tunnels">Tunnels (Logistics)</option>
                 <option value="highways">Strategic Roads (E80/D100)</option>
                 <option value="hospitals">Hospitals (Medical Support)</option>
-                <option value="power">Power Facilities (Energy)</option>
                 <option value="ports">Ports & Harbours (Logistics)</option>
                 <option value="fuel">Fuel Stations (Supply)</option>
             </select>
@@ -33,6 +36,8 @@
             </div>
         </div>
     </div>
+
+    <div id="legend" class="legend"></div>
     <div id="map"></div>
 
     <script src="js/config.js"></script>
