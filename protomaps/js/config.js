@@ -1,24 +1,11 @@
 /* --- CONFIGURATIE (DATA) --- */
 const MAP_CONFIG = [
-    {
-        category: "🚨 Kritieke Infrastructuur (Paper: Nodes & Logistics)",
-        layers: [
-            { id: 'grp-bridges', label: 'Bruggen & Viaducten', color: '#e74c3c', checked: true, layerIds: ['roads_bridges_major', 'roads_bridges_minor', 'roads_bridges_other'] },
-            { id: 'grp-tunnels', label: 'Tunnels', color: '#3498db', checked: true, layerIds: ['roads_tunnels_major', 'roads_tunnels_minor'] },
-
-            { id: 'grp-ports', label: 'Havens & Piers', color: '#1abc9c', checked: true, layerIds: ['roads_pier', 'landuse_pier'] },
-            { id: 'grp-fuel-poi', label: 'Brandstofstations (OSM POI)', color: '#eb4d4b', checked: true, layerIds: ['pois'], filter: ['==', ['get', 'pmap:kind'], 'fuel'] },
-            { id: 'grp-hospitals-landuse', label: 'Ziekenhuis Gebieden', color: '#f1c40f', checked: true, layerIds: ['landuse_hospital'] },
-
-        ]
-    },
-    {
-        category: "🏥 Resilience Support (Paper: Medical & Energy)",
-        layers: [
-            { id: 'grp-hospitals-landuse', label: 'Ziekenhuis Gebieden', color: '#f1c40f', checked: true, layerIds: ['landuse_hospital'] },
-        ]
-    },
-
+    { id: 'bridges', color: '#e74c3c', layerIds: ['roads_bridges_major', 'roads_bridges_minor', 'roads_bridges_other'] },
+    { id: 'tunnels', color: '#34495e', layerIds: ['roads_tunnels_major', 'roads_tunnels_minor'] },
+    { id: 'highways', color: '#f1c40f', layerIds: ['roads_motorway', 'roads_trunk'] },
+    { id: 'hospitals', color: '#e73c3c86', layerIds: ['landuse_hospital'] },
+    { id: 'ports', color: '#3498db', layerIds: ['roads_pier', 'landuse_pier'] },
+    { id: 'fuel', color: '#e67e22', layerIds: ['pois'] }
 ];
 
 const API_KEY = "8f724fb4da305e5c";

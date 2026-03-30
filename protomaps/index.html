@@ -1,21 +1,38 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turkey SDI - Modular</title>
-    
+    <title>Istanbul SDI - Readiness (Protomaps)</title>
     <script src="https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css" rel="stylesheet" />
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <div class="dashboard" id="ui-container">
-        <h3>Turkey Data Control</h3>
+    <nav>
+        </nav>
+    <div class="dashboard">
+        <h3>Operational Layers</h3>
+        <div class="control-group">
+            <label>Infrastructure Type</label>
+            <select id="infra-select">
+                <option value="all">All Infrastructure (Combined)</option>
+                <option value="bridges">Bridges (Critical Nodes)</option>
+                <option value="tunnels">Tunnels (Logistics)</option>
+                <option value="highways">Strategic Roads (E80/D100)</option>
+                <option value="hospitals">Hospitals (Medical Support)</option>
+                <option value="power">Power Facilities (Energy)</option>
+                <option value="ports">Ports & Harbours (Logistics)</option>
+                <option value="fuel">Fuel Stations (Supply)</option>
+            </select>
+        </div>
+        <div class="stats-box">
+            <p style="font-size: 0.8rem; color: #666;">
+                Evaluating 1:10,000 scale attributes via <strong>Protomaps Vector Tiles</strong>.
+            </p>
+            <div id="attribute-status" class="stat-item">
+                <span>Data Source:</span><span id="reliability-val" class="stat-value">Protomaps Cloud</span>
+            </div>
+        </div>
     </div>
-
     <div id="map"></div>
 
     <script src="js/config.js"></script>

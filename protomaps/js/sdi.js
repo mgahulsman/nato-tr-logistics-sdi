@@ -1,55 +1,34 @@
-function initDashboard() {
-    const container = document.getElementById('ui-container');
-
-    MAP_CONFIG.forEach(section => {
-        const box = document.createElement('div');
-        box.className = 'category-box';
-        box.innerHTML = `<h4>${section.category}</h4>`;
-
-        section.layers.forEach(layer => {
-            const item = document.createElement('div');
-            item.className = 'layer-item';
-            item.innerHTML = `
-                <input type="checkbox" id="${layer.id}" ${layer.checked ? 'checked' : ''}>
-                <div class="color-dot" style="background: ${layer.color};"></div>
-                <label for="${layer.id}">${layer.label}</label>
-            `;
-
-            item.querySelector('input').addEventListener('change', () => applyLayerState(layer));
-            box.appendChild(item);
-        });
-        container.appendChild(box);
-    });
-}
-
-function applyLayerState(layerCfg) {
-    const isVisible = document.getElementById(layerCfg.id).checked;
+function updateMap() {
+    const selection = document.getElementById('infra-select').value;
     
-    layerCfg.layerIds.forEach(id => {
-        if (map.getLayer(id)) {
-            map.setLayoutProperty(id, 'visibility', isVisible ? 'visible' : 'none');
-            
-            if (isVisible) {
-                const type = map.getLayer(id).type;
+    MAP_CONFIG.forEach(item => {
+        const isVisible = (selection === 'all' || item.id === selection);
+        
+        item.layerIds.forEach(layerId => {
+            if (map.getLayer(layerId)) {
+                map.setLayoutProperty(layerId, 'visibility', isVisible ? 'visible' : 'none');
                 
-                if (type === 'line') {
-                    map.setPaintProperty(id, 'line-color', layerCfg.color);
-                    if (!id.includes('casing')) map.setPaintProperty(id, 'line-width', 2.5);
-                } 
-                else if (type === 'fill') {
-                    map.setPaintProperty(id, 'fill-color', layerCfg.color);
-                    map.setPaintProperty(id, 'fill-opacity', 0.7);
+                if (isVisible) {
+                    const type = map.getLayer(layerId).type;
+                    if (type === 'line') {
+                        map.setPaintProperty(layerId, 'line-color', item.color);
+                        if (!layerId.includes('casing')) map.setPaintProperty(layerId, 'line-width', 2.5);
+                    } 
+                    else if (type === 'fill') {
+                        map.setPaintProperty(layerId, 'fill-color', item.color);
+                        map.setPaintProperty(layerId, 'fill-opacity', 0.7);
+                    }
                 }
             }
-        }
+        });
     });
 }
 
 map.on('load', () => {
-    initDashboard();
-    MAP_CONFIG.forEach(section => {
-        section.layers.forEach(layer => applyLayerState(layer));
-    });
+    // Initialiseer de kaart met de geselecteerde lagen
+    updateMap();
+    // Luister naar veranderingen in de dropdown
+    document.getElementById('infra-select').onchange = updateMap;
 });
 
 map.addControl(new maplibregl.NavigationControl());
